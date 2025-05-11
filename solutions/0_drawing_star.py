@@ -1,3 +1,10 @@
+"""
+This task is not in the attacjed task list file `tasks.md`.
+This was assigned as part of an online lecture.
+The task is to draw a star using the pygame library by modifying
+the original `drawing.py` file provided in the `examples` directory.
+"""
+
 import sys
 import pygame
 from pygame.locals import QUIT
