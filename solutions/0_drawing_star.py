@@ -11,8 +11,6 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-DISPLAYSURF.fill(WHITE)
-
 
 def draw_star():
     star_points = [
@@ -34,6 +32,7 @@ def main():
     pygame.init()
 
     # set up the window
+    DISPLAYSURF.fill(WHITE)
     pygame.display.set_caption("Drawing")
 
     draw_star()
