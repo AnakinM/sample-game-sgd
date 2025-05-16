@@ -33,9 +33,10 @@ HALF_WINHEIGHT = int(WINHEIGHT / 2)
 GRASSCOLOR = (24, 255, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
+YELLOW = (255, 255, 0)  # Added for Level Up message
 
 CAMERASLACK = 90  # how far from the center the squirrel moves before moving the camera
-MOVERATE = 9  # how fast the player moves
+# MOVERATE will be handled by global variables below
 BOUNCERATE = 6  # how fast the player bounces (large is slower)
 BOUNCEHEIGHT = 30  # how high the player bounces
 STARTSIZE = 25  # how big the player starts off
@@ -46,11 +47,19 @@ MAXHEALTH = 3  # how much health the player starts with
 
 NUMGRASS = 80  # number of grass objects in the active area
 NUMSQUIRRELS = 30  # number of squirrels in the active area
-SQUIRRELMINSPEED = 3  # slowest squirrel speed
-SQUIRRELMAXSPEED = 7  # fastest squirrel speed
-DIRCHANGEFREQ = 2  # % chance of direction change per frame
 LEFT = "left"
 RIGHT = "right"
+
+INITIAL_MOVERATE = 9
+INITIAL_SQUIRRELMINSPEED = 3
+INITIAL_SQUIRRELMAXSPEED = 7
+INITIAL_DIRCHANGEFREQ = 2
+
+MOVERATE = INITIAL_MOVERATE
+SQUIRRELMINSPEED = INITIAL_SQUIRRELMINSPEED
+SQUIRRELMAXSPEED = INITIAL_SQUIRRELMAXSPEED
+DIRCHANGEFREQ = INITIAL_DIRCHANGEFREQ
+
 
 """
 This program has three data structures to represent the player, enemy squirrels,
@@ -117,11 +126,23 @@ def main():
 
 def runGame():
     # set up variables for the start of a new game
+    global MOVERATE, SQUIRRELMINSPEED, SQUIRRELMAXSPEED, DIRCHANGEFREQ
+
+    MOVERATE = INITIAL_MOVERATE
+    SQUIRRELMINSPEED = INITIAL_SQUIRRELMINSPEED
+    SQUIRRELMAXSPEED = INITIAL_SQUIRRELMAXSPEED
+    DIRCHANGEFREQ = INITIAL_DIRCHANGEFREQ
+
     invulnerableMode = False  # if the player is invulnerable
     invulnerableStartTime = 0  # time the player became invulnerable
     gameOverMode = False  # if the player has lost
     gameOverStartTime = 0  # time the player lost
     winMode = False  # if the player has won
+
+    squirrelsEaten = 0
+    levelUpMessageActive = False
+    levelUpMessageStartTime = 0.0
+    levelUpDisplayTime = 2.0
 
     # create the surfaces to hold game text
     gameOverSurf = BASICFONT.render("Game Over", True, WHITE)
@@ -135,6 +156,10 @@ def runGame():
     winSurf2 = BASICFONT.render('(Press "r" to restart.)', True, WHITE)
     winRect2 = winSurf2.get_rect()
     winRect2.center = (HALF_WINWIDTH, HALF_WINHEIGHT + 30)
+
+    levelUpSurf = BASICFONT.render("Level Up!", True, YELLOW)
+    levelUpRect = levelUpSurf.get_rect()
+    levelUpRect.center = (HALF_WINWIDTH, HALF_WINHEIGHT - 60)
 
     # camerax and cameray are the top left of where the camera view is
     camerax = 0
@@ -342,6 +367,8 @@ def runGame():
                         )
                         del squirrelObjs[i]
 
+                        squirrelsEaten += 1  # Increment squirrels eaten counter
+
                         if playerObj["facing"] == LEFT:
                             playerObj["surface"] = pygame.transform.scale(
                                 L_SQUIR_IMG, (playerObj["size"], playerObj["size"])
@@ -350,6 +377,16 @@ def runGame():
                             playerObj["surface"] = pygame.transform.scale(
                                 R_SQUIR_IMG, (playerObj["size"], playerObj["size"])
                             )
+
+                        # Check for Level Up
+                        if squirrelsEaten > 0 and squirrelsEaten % 5 == 0:
+                            levelUpMessageActive = True
+                            levelUpMessageStartTime = time.time()
+                            MOVERATE += 1
+                            SQUIRRELMINSPEED += 1
+                            SQUIRRELMAXSPEED += 1
+                            if SQUIRRELMINSPEED >= SQUIRRELMAXSPEED:
+                                SQUIRRELMAXSPEED = SQUIRRELMINSPEED + 1
 
                         if playerObj["size"] > WINSIZE:
                             winMode = True  # turn on "win mode"
@@ -372,6 +409,13 @@ def runGame():
         if winMode:
             DISPLAYSURF.blit(winSurf, winRect)
             DISPLAYSURF.blit(winSurf2, winRect2)
+
+        # Display Level Up message if active
+        if levelUpMessageActive:
+            if time.time() - levelUpMessageStartTime < levelUpDisplayTime:
+                DISPLAYSURF.blit(levelUpSurf, levelUpRect)
+            else:
+                levelUpMessageActive = False
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
@@ -400,6 +444,7 @@ def getBounceAmount(currentBounce, bounceRate, bounceHeight):
 
 
 def getRandomVelocity():
+    # Uses global SQUIRRELMINSPEED and SQUIRRELMAXSPEED
     speed = random.randint(SQUIRRELMINSPEED, SQUIRRELMAXSPEED)
     if random.randint(0, 1) == 0:
         return speed
