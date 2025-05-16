@@ -6,6 +6,7 @@ import random
 import sys
 import copy
 import os
+import time
 
 import pygame
 from pygame.locals import (
@@ -167,6 +168,13 @@ def runLevel(levels, levelNum):
     MAX_CAM_Y_PAN = abs(HALF_WINWIDTH - int(mapWidth / 2)) + TILEHEIGHT
 
     levelIsComplete = False
+    showingLevelCompleteTimedMessage = False
+    levelCompleteMessageStartTime = 0.0
+    LEVEL_COMPLETE_MESSAGE_DURATION = 3.0
+    levelCompleteSurf = BASICFONT.render("Level Complete!", 1, TEXTCOLOR)
+    levelCompleteRect = levelCompleteSurf.get_rect()
+    levelCompleteRect.center = (HALF_WINWIDTH, HALF_WINHEIGHT)
+
     # Track how much the camera has moved:
     cameraOffsetX = 0
     cameraOffsetY = 0
@@ -189,17 +197,19 @@ def runLevel(levels, levelNum):
             elif event.type == KEYDOWN:
                 # Handle key presses
                 keyPressed = True
-                if event.key == K_LEFT:
-                    playerMoveTo = LEFT
-                elif event.key == K_RIGHT:
-                    playerMoveTo = RIGHT
-                elif event.key == K_UP:
-                    playerMoveTo = UP
-                elif event.key == K_DOWN:
-                    playerMoveTo = DOWN
+
+                if not levelIsComplete:
+                    if event.key == K_LEFT:
+                        playerMoveTo = LEFT
+                    elif event.key == K_RIGHT:
+                        playerMoveTo = RIGHT
+                    elif event.key == K_UP:
+                        playerMoveTo = UP
+                    elif event.key == K_DOWN:
+                        playerMoveTo = DOWN
 
                 # Set the camera move mode.
-                elif event.key == K_a:
+                if event.key == K_a:
                     cameraLeft = True
                 elif event.key == K_d:
                     cameraRight = True
@@ -212,7 +222,6 @@ def runLevel(levels, levelNum):
                     return "next"
                 elif event.key == K_b:
                     return "back"
-
                 elif event.key == K_ESCAPE:
                     terminate()  # Esc key quits.
                 elif event.key == K_BACKSPACE:
@@ -246,10 +255,11 @@ def runLevel(levels, levelNum):
                 gameStateObj["stepCounter"] += 1
                 mapNeedsRedraw = True
 
-            if isLevelFinished(levelObj, gameStateObj):
-                # level is solved, we should show the "Solved!" image.
+            if not levelIsComplete and isLevelFinished(levelObj, gameStateObj):
                 levelIsComplete = True
-                keyPressed = False
+                showingLevelCompleteTimedMessage = True
+                levelCompleteMessageStartTime = time.time()
+                mapNeedsRedraw = True
 
         DISPLAYSURF.fill(BGCOLOR)
 
@@ -284,9 +294,16 @@ def runLevel(levels, levelNum):
         stepRect.bottomleft = (20, WINHEIGHT - 10)
         DISPLAYSURF.blit(stepSurf, stepRect)
 
-        if levelIsComplete:
-            # is solved, show the "Solved!" image until the player
-            # has pressed a key.
+        if showingLevelCompleteTimedMessage:
+            DISPLAYSURF.blit(levelCompleteSurf, levelCompleteRect)
+            if (
+                time.time() - levelCompleteMessageStartTime
+                >= LEVEL_COMPLETE_MESSAGE_DURATION
+            ):
+                showingLevelCompleteTimedMessage = False
+                levelCompleteMessageStartTime = 0.0
+                mapNeedsRedraw = True
+        elif levelIsComplete:
             solvedRect = IMAGESDICT["solved"].get_rect()
             solvedRect.center = (HALF_WINWIDTH, HALF_WINHEIGHT)
             DISPLAYSURF.blit(IMAGESDICT["solved"], solvedRect)
