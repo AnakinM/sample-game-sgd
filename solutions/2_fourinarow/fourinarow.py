@@ -47,12 +47,14 @@ COMPUTER = "computer"
 def main():
     global FPSCLOCK, DISPLAYSURF, REDPILERECT, BLACKPILERECT, REDTOKENIMG
     global BLACKTOKENIMG, BOARDIMG, ARROWIMG, ARROWRECT, HUMANWINNERIMG
-    global COMPUTERWINNERIMG, WINNERRECT, TIEWINNERIMG
+    global COMPUTERWINNERIMG, WINNERRECT, TIEWINNERIMG, MAINFONT
 
     pygame.init()
     FPSCLOCK = pygame.time.Clock()
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
     pygame.display.set_caption("Four in a Row")
+
+    MAINFONT = pygame.font.SysFont("Arial", 30)
 
     REDPILERECT = pygame.Rect(
         int(SPACESIZE / 2), WINDOWHEIGHT - int(3 * SPACESIZE / 2), SPACESIZE, SPACESIZE
@@ -151,7 +153,7 @@ def makeMove(board, player, column):
         board[column][lowest] = player
 
 
-def drawBoard(board, extraToken=None):
+def drawBoard(board, active_player=None, extraToken=None):
     DISPLAYSURF.fill(BGCOLOR)
 
     # draw tokens
@@ -184,6 +186,22 @@ def drawBoard(board, extraToken=None):
     # draw the red and black tokens off to the side
     DISPLAYSURF.blit(REDTOKENIMG, REDPILERECT)  # red on the left
     DISPLAYSURF.blit(BLACKTOKENIMG, BLACKPILERECT)  # black on the right
+
+    # Display current player's turn
+    if active_player:
+        if active_player == HUMAN:
+            text = "Your Turn (Red)"
+        elif active_player == COMPUTER:
+            text = "Computer's Turn (Black)"
+        else:
+            text = ""
+
+        if text:
+            turnSurf = MAINFONT.render(text, True, TEXTCOLOR)
+            turnRect = turnSurf.get_rect()
+            turnRect.centerx = int(WINDOWWIDTH / 2)
+            turnRect.top = 10
+            DISPLAYSURF.blit(turnSurf, turnRect)
 
 
 def getNewBoard():
@@ -224,7 +242,7 @@ def getHumanMove(board, isFirstMove):
                     if isValidMove(board, column):
                         animateDroppingToken(board, column, RED)
                         board[column][getLowestEmptySpace(board, column)] = RED
-                        drawBoard(board)
+                        drawBoard(board, HUMAN)
                         pygame.display.update()
                         return
                 tokenx, tokeny = None, None
@@ -232,6 +250,7 @@ def getHumanMove(board, isFirstMove):
         if tokenx is not None and tokeny is not None:
             drawBoard(
                 board,
+                HUMAN,
                 {
                     "x": tokenx - int(SPACESIZE / 2),
                     "y": tokeny - int(SPACESIZE / 2),
@@ -239,7 +258,7 @@ def getHumanMove(board, isFirstMove):
                 },
             )
         else:
-            drawBoard(board)
+            drawBoard(board, HUMAN)
 
         if isFirstMove:
             # Show the help arrow for the player's first move.
@@ -255,13 +274,14 @@ def animateDroppingToken(board, column, color):
     dropSpeed = 1.0
 
     lowestEmptySpace = getLowestEmptySpace(board, column)
+    player_for_draw = HUMAN if color == RED else COMPUTER
 
     while True:
         y += int(dropSpeed)
         dropSpeed += 0.5
         if int((y - YMARGIN) / SPACESIZE) >= lowestEmptySpace:
             return
-        drawBoard(board, {"x": x, "y": y, "color": color})
+        drawBoard(board, player_for_draw, {"x": x, "y": y, "color": color})
         pygame.display.update()
         FPSCLOCK.tick()
 
@@ -274,7 +294,7 @@ def animateComputerMoving(board, column):
     while y > (YMARGIN - SPACESIZE):
         y -= int(speed)
         speed += 0.5
-        drawBoard(board, {"x": x, "y": y, "color": BLACK})
+        drawBoard(board, COMPUTER, {"x": x, "y": y, "color": BLACK})
         pygame.display.update()
         FPSCLOCK.tick()
     # moving the black tile over
@@ -283,7 +303,7 @@ def animateComputerMoving(board, column):
     while x > (XMARGIN + column * SPACESIZE):
         x -= int(speed)
         speed += 0.5
-        drawBoard(board, {"x": x, "y": y, "color": BLACK})
+        drawBoard(board, COMPUTER, {"x": x, "y": y, "color": BLACK})
         pygame.display.update()
         FPSCLOCK.tick()
     # dropping the black tile
