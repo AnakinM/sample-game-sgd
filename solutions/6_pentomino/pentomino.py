@@ -215,6 +215,7 @@ def runGame():
     movingLeft = False
     movingRight = False
     score = 0
+    linesCleared = 0
     level, fallFreq = calculateLevelAndFallFreq(score)
 
     fallingPiece = getNewPiece()
@@ -248,7 +249,6 @@ def runGame():
                     movingRight = False
                 elif event.key == K_DOWN or event.key == K_s:
                     movingDown = False
-
             elif event.type == KEYDOWN:
                 # moving the piece sideways
                 if (event.key == K_LEFT or event.key == K_a) and isValidPosition(
@@ -258,8 +258,7 @@ def runGame():
                     movingLeft = True
                     movingRight = False
                     lastMoveSidewaysTime = time.time()
-
-                elif (event.key == K_RIGHT or event.key == K_d) and isValidPosition(
+                elif event.key in (K_RIGHT, K_d) and isValidPosition(
                     board, fallingPiece, adjX=1
                 ):
                     fallingPiece["x"] += 1
@@ -326,7 +325,9 @@ def runGame():
             if not isValidPosition(board, fallingPiece, adjY=1):
                 # falling piece has landed, set it on the board
                 addToBoard(board, fallingPiece)
-                score += removeCompleteLines(board)
+                removed = removeCompleteLines(board)
+                linesCleared += removed
+                score += removed
                 level, fallFreq = calculateLevelAndFallFreq(score)
                 fallingPiece = None
             else:
@@ -337,7 +338,7 @@ def runGame():
         # drawing everything on the screen
         DISPLAYSURF.fill(BGCOLOR)
         drawBoard(board)
-        drawStatus(score, level)
+        drawStatus(score, level, linesCleared)
         drawNextPiece(nextPiece)
         if fallingPiece is not None:
             drawPiece(fallingPiece)
@@ -539,7 +540,7 @@ def drawBoard(board):
             drawBox(x, y, board[x][y])
 
 
-def drawStatus(score, level):
+def drawStatus(score, level, linesCleared):
     # draw the score text
     scoreSurf = BASICFONT.render("Score: %s" % score, True, TEXTCOLOR)
     scoreRect = scoreSurf.get_rect()
@@ -551,6 +552,11 @@ def drawStatus(score, level):
     levelRect = levelSurf.get_rect()
     levelRect.topleft = (WINDOWWIDTH - 150, 50)
     DISPLAYSURF.blit(levelSurf, levelRect)
+
+    linesSurf = BASICFONT.render(f"Lines: {linesCleared}", True, TEXTCOLOR)
+    linesRect = linesSurf.get_rect()
+    linesRect.topleft = (WINDOWWIDTH - 150, 80)
+    DISPLAYSURF.blit(linesSurf, linesRect)
 
 
 def drawPiece(piece, pixelx=None, pixely=None):
@@ -577,10 +583,10 @@ def drawNextPiece(piece):
     # draw the "next" text
     nextSurf = BASICFONT.render("Next:", True, TEXTCOLOR)
     nextRect = nextSurf.get_rect()
-    nextRect.topleft = (WINDOWWIDTH - 120, 80)
+    nextRect.topleft = (WINDOWWIDTH - 120, 120)
     DISPLAYSURF.blit(nextSurf, nextRect)
     # draw the "next" piece
-    drawPiece(piece, pixelx=WINDOWWIDTH - 120, pixely=100)
+    drawPiece(piece, pixelx=WINDOWWIDTH - 120, pixely=140)
 
 
 if __name__ == "__main__":
