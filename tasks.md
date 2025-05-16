@@ -30,7 +30,7 @@ Add a feature to display the current player's turn on the screen.
 
 Add a feature to display a "Pause" message and pause the game when the player presses the P key.
 
-### quirrel.py:
+### squirrel.py:
 
 Add a feature to display a "Level Up" message and increase the game speed slightly every time the player reaches a score that is a multiple of 5
 
